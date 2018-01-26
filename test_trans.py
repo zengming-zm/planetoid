@@ -18,8 +18,8 @@ parser.add_argument('--neg_samp', help = 'negative sampling rate; zero means usi
 parser.add_argument('--g_learning_rate', help = 'learning rate for unsupervised loss', type = float, default = 1e-2)
 parser.add_argument('--model_file', help = 'filename for saving models', type = str, default = 'trans.model')
 parser.add_argument('--use_feature', help = 'whether use input features', type = bool, default = True)
-parser.add_argument('--update_emb', help = 'whether update embedding when optimizing supervised loss', type = bool, default = True)
-parser.add_argument('--layer_loss', help = 'whether incur loss on hidden layers', type = bool, default = True)
+parser.add_argument('--update_emb', help = 'whether update embedding when optimizing supervised loss', type = bool, default = False)
+parser.add_argument('--layer_loss', help = 'whether incur loss on hidden layers', type = bool, default = False)
 args = parser.parse_args()
 
 def comp_accu(tpy, ty):
@@ -36,14 +36,16 @@ x, y, tx, ty, graph = tuple(OBJECTS)
 m = model(args)                                             # initialize the model
 m.add_data(x, y, graph)                                     # add data
 m.build()                                                   # build the model
-m.init_train(init_iter_label = 2000, init_iter_graph = 70)  # pre-training
+#m.init_train(init_iter_label = 2, init_iter_graph = 2)  # pre-training
 iter_cnt, max_accu = 0, 0
 while True:
     m.step_train(max_iter = 1, iter_graph = 0, iter_inst = 1, iter_label = 0)   # perform a training step
     tpy = m.predict(tx)                                                         # predict the dev set
+    trn_py = m.trn_predict(x)
     accu = comp_accu(tpy, ty)                                                   # compute the accuracy on the dev set
-    print iter_cnt, accu, max_accu
+    trn_accu = comp_accu(trn_py, y)
+    print iter_cnt, accu, max_accu, trn_accu
     iter_cnt += 1
     if accu > max_accu:
-        m.store_params()                                                        # store the model if better result is obtained
+       # m.store_params()                                                        # store the model if better result is obtained
         max_accu = max(max_accu, accu)
